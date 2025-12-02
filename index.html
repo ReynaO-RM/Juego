@@ -1,5 +1,4 @@
 <!--
-
 Created by Alvin Wan (alvinwan.com)
 
 * ocean animation from Don Mccurdy
@@ -9,7 +8,7 @@ Created by Alvin Wan (alvinwan.com)
 <html>
   <head>
     <title>Ergo | Endless Runner Game in Virtual Reality</title>
-    <!-- Usar A-Frame 1.4.0 para mejor soporte VR/AR -->
+    <!-- CAMBIO 1: Usar A-Frame 1.4.0 (compatible con Quest 3) -->
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="./assets/ocean.js"></script>
     <script src="./assets/runner.js"></script>
@@ -19,35 +18,18 @@ Created by Alvin Wan (alvinwan.com)
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css" integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
     <link href="https://fonts.googleapis.com/css?family=Exo+2" rel="stylesheet">
     <link href="./assets/style.css" rel="stylesheet" />
-    <style>
-      /* Ocultar la notificación inicialmente */
-      .notification-container {
-        display: none;
-      }
-      
-      /* Mejorar visibilidad del texto en VR */
-      a-text {
-        font-family: 'Exo 2', sans-serif !important;
-      }
-    </style>
   </head>
   <body>
-    <!-- Contenedor de notificación (oculto por defecto) -->
-    <div class="notification-container" style="display: none;">
+    <div class="notification-container">
       <div class="notification-desktop">
         <p>This is the default room. If any mobile user joins, your will lose control and this app will mirror that mobile user's screen.
           <a onClick="location.reload();" href="#" class="notification-button">Click to join a random room.</a>
           <a onClick="hideWarning();" class="notification-close"><i class="fas fa-times"></i></a></p>
       </div>
     </div>
-    
-    <!-- Escena A-Frame con soporte VR/AR -->
-    <a-scene 
-      fog="type: linear; color: #a3d0ed; near:5; far:20"
-      vr-mode-ui="enabled: true"
-      ar-mode="enabled: true"
-      renderer="antialias: true; colorManagement: true;"
-      embedded>
+    <!-- CAMBIO 2: Agregar vr-mode-ui para activar botón AR/VR -->
+    <a-scene fog="type: linear; color: #a3d0ed; near:5; far:20"
+             vr-mode-ui="enabled: true">
 
       <a-sky color="#a3d0ed"></a-sky>
 
@@ -193,98 +175,23 @@ Created by Alvin Wan (alvinwan.com)
         </a-entity>
       </lp-cone>
       
-      <!-- Controles VR opcionales (se activan automáticamente) -->
-      <a-entity id="vr-controls-entity" visible="false">
-        <!-- Estos controles se manejan por JavaScript -->
-      </a-entity>
+      <!-- CAMBIO 3: Agregar controles VR para Meta Quest 3 (mantiene compatibilidad) -->
+      <a-entity laser-controls="hand: right" line="color: #118AEF"></a-entity>
+      <a-entity laser-controls="hand: left" line="color: #118AEF"></a-entity>
       
     </a-scene>
     
+    <!-- Script para ocultar notificación al cargar -->
     <script>
-      // Script para manejar la transición a VR/AR
       document.addEventListener('DOMContentLoaded', function() {
-        console.log('Página cargada, configurando para Meta Quest 3');
-        
-        // Ocultar notificación inmediatamente
-        var notification = document.querySelector('.notification-container');
-        if (notification) {
-          notification.style.display = 'none';
-        }
-        
-        // Verificar soporte WebXR
-        if (navigator.xr) {
-          console.log('WebXR soportado');
-          navigator.xr.isSessionSupported('immersive-vr').then(function(supported) {
-            console.log('VR inmersivo soportado:', supported);
-          });
-          
-          navigator.xr.isSessionSupported('immersive-ar').then(function(supported) {
-            console.log('AR inmersivo soportado:', supported);
-          });
-        }
-        
-        // Escuchar cuando se entra en modo VR/AR
-        var scene = document.querySelector('a-scene');
-        if (scene) {
-          scene.addEventListener('enter-vr', function() {
-            console.log('¡Modo VR activado!');
-            // Actualizar instrucciones para VR
-            updateVRInstructions();
-          });
-          
-          scene.addEventListener('enter-ar', function() {
-            console.log('¡Modo AR activado!');
-            // Actualizar instrucciones para AR
-            updateVRInstructions();
-          });
-        }
+        // Ocultar notificación después de 3 segundos
+        setTimeout(function() {
+          var notification = document.querySelector('.notification-container');
+          if (notification) {
+            notification.style.display = 'none';
+          }
+        }, 3000);
       });
-      
-      // Función para actualizar instrucciones en VR/AR
-      function updateVRInstructions() {
-        console.log('Actualizando instrucciones para VR/AR');
-        
-        // Actualizar texto del menú de inicio
-        var startCopyDesktop = document.getElementById('start-copy-desktop');
-        if (startCopyDesktop) {
-          startCopyDesktop.setAttribute('value', 'Joystick izquierdo: Mover\nBotón A: Empezar juego');
-        }
-        
-        // Actualizar texto del menú de fin de juego
-        var gameOverCopyDesktop = document.getElementById('game-over-copy-desktop');
-        if (gameOverCopyDesktop) {
-          gameOverCopyDesktop.setAttribute('value', 'Botón A: Jugar de nuevo');
-        }
-        
-        // Actualizar otras instrucciones
-        var turnAroundText = document.querySelector('a-text[value="Turn around!"]');
-        if (turnAroundText) {
-          turnAroundText.setAttribute('value', '¡Gira para ver!');
-        }
-        
-        var turnLeftText = document.querySelector('a-text[value="Turn left"]');
-        if (turnLeftText) {
-          turnLeftText.setAttribute('value', 'Gira izquierda');
-        }
-        
-        var turnRightText = document.querySelector('a-text[value="Turn right"]');
-        if (turnRightText) {
-          turnRightText.setAttribute('value', 'Gira derecha');
-        }
-        
-        var lookUpText = document.querySelector('a-text[value="Look up"]');
-        if (lookUpText) {
-          lookUpText.setAttribute('value', 'Mira arriba');
-        }
-      }
-      
-      // Función para ocultar advertencia (ya no es necesaria pero se mantiene por compatibilidad)
-      function hideWarning() {
-        var warning = document.querySelector('.notification-container');
-        if (warning) {
-          warning.style.display = 'none';
-        }
-      }
     </script>
   </body>
 </html>

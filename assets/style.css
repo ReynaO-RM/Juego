@@ -1,53 +1,39 @@
-/* Estilos optimizados para VR */
-body, html {
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    font-family: 'Exo 2', sans-serif;
-    background-color: #a3d0ed;
+.notification-desktop {
+  background-color:#FFF;
+  padding:0.25em 1.5em;
+  border-radius:0.25em;
+  box-shadow: 0 0 1em 0 rgba(0,0,0,0.2);
+  margin:1em;
+  font-family:'Exo 2';
 }
-
-/* Ocultar todos los elementos de UI no-VR */
-.notification-container,
-.notification-desktop,
-.notification-button,
-.notification-close,
-#cursor-mobile,
-.clickable,
-#start-button,
-#restart-button {
-    display: none !important;
-    visibility: hidden !important;
+.notification-button {
+  background-color:#eee;
+  padding:0.5em;
+  margin-left:0.5em;
+  border-radius:0.25em;
+  color:#666;
+  text-decoration:none;
+  border:2px solid transparent;
 }
-
-/* Asegurar que la escena ocupe toda la pantalla */
-a-scene {
-    width: 100%;
-    height: 100%;
-    display: block;
+.notification-container {
+  align-items: center;
+  justify-content: center;
+  display:flex;
+  width:100%;
+  position:fixed;
+  top:0;
+  left:0;
+  z-index:1000;
 }
-
-/* Estilos para texto en VR */
-a-text {
-    font-family: 'Exo 2', sans-serif !important;
-    font-weight: 600 !important;
-    text-rendering: optimizeLegibility;
-    -webkit-font-smoothing: antialiased;
+.notification-button:hover {
+  border:2px solid #ccc;
+  color:#333;
 }
-
-/* Jugador más visible */
-#player {
-    z-index: 1000;
+.notification-close {
+  color:#999;
+  padding:0.5em 0.25em 0.5em 0.5em;
+  margin-left:0.5em;
 }
-
-/* Árboles con sombra */
-.tree {
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
-}
-
-/* Icebergs */
-.iceberg {
-    animation-timing-function: ease-in-out;
+.notification-close:hover {
+  color:#333;
 }

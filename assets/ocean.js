@@ -1,3 +1,10 @@
+/**
+ * Flat-shaded ocean primitive.
+ * https://github.com/donmccurdy/aframe-extras
+ *
+ * Based on a Codrops tutorial:
+ * http://tympanus.net/codrops/2016/04/26/the-aviator-animating-basic-3d-scene-threejs/
+ */
 AFRAME.registerPrimitive('a-ocean', {
   defaultComponents: {
     ocean: {},

@@ -1,7 +1,3 @@
-/**
- * Created by Alvin Wan (alvinwan.com)
- **/
-
 const POSITION_X_LEFT = -0.5;
 const POSITION_X_CENTER = 0;
 const POSITION_X_RIGHT = 0.5;
@@ -12,8 +8,6 @@ const POSITION_X_RIGHT = 0.5;
 
 // Position is one of 0 (left), 1 (center), or 2 (right)
 var player_position_index = 1;
-// Variable para control VR
-var vrButtonPressed = false;
 
 /**
  * Move player to provided index
@@ -34,19 +28,9 @@ function movePlayerTo(position_index) {
 /**
  * Determine how `movePlayerTo` will be fired.
  * If desktop, use arrow or WASD keys. If mobile, use camera's rotation.
- * For VR, use gamepad controls.
  **/
 function setupControls() {
-  // Siempre configurar controles de escritorio para compatibilidad
-  setupDesktopControls();
-  
-  // Configurar controles VR adicionales
-  setupVRControls();
-  
-  // Configurar controles móviles si es necesario
-  if (mobileCheck()) {
-    setupMobileControls();
-  }
+  return mobileCheck() ? setupMobileControls() : setupDesktopControls();
 }
 
 function setupDesktopControls() {
@@ -77,112 +61,6 @@ function setupMobileControls() {
       else                        movePlayerTo(1);
     }
   })
-}
-
-// NUEVO: Controles VR para Meta Quest 3
-function setupVRControls() {
-  console.log('Configurando controles VR para Quest 3...');
-  
-  // Componente para detectar controles VR
-  AFRAME.registerComponent('vr-gamepad-controls', {
-    init: function() {
-      console.log('Controles VR inicializados');
-      this.lastGamepadUpdate = 0;
-      this.buttonADown = false;
-      this.buttonBDown = false;
-    },
-    
-    tick: function(time) {
-      // Solo verificar gamepads cada 100ms para mejor rendimiento
-      if (time - this.lastGamepadUpdate < 100) return;
-      this.lastGamepadUpdate = time;
-      
-      // Obtener gamepads
-      const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
-      
-      for (let i = 0; i < gamepads.length; i++) {
-        const gamepad = gamepads[i];
-        if (!gamepad) continue;
-        
-        // Detectar controles de Quest/Oculus
-        if (gamepad.id && (gamepad.id.includes('Quest') || gamepad.id.includes('Oculus') || gamepad.id.includes('Touch') || gamepad.id.includes('Meta'))) {
-          
-          // Controles de movimiento con joystick izquierdo (eje 0 y 1)
-          const leftStickX = gamepad.axes[0] || 0;
-          const leftStickY = gamepad.axes[1] || 0;
-          const deadzone = 0.3;
-          
-          // Movimiento horizontal con joystick izquierdo
-          if (Math.abs(leftStickX) > deadzone) {
-            if (leftStickX < -deadzone) {
-              movePlayerTo(0); // Izquierda
-            } else if (leftStickX > deadzone) {
-              movePlayerTo(2); // Derecha
-            }
-          } else {
-            movePlayerTo(1); // Centro
-          }
-          
-          // Botones para empezar/reiniciar
-          // Botón A (normalmente índice 0 o 1)
-          const aButton = gamepad.buttons[0] || gamepad.buttons[1];
-          if (aButton && aButton.pressed && !this.buttonADown) {
-            this.buttonADown = true;
-            console.log('Botón A presionado en VR');
-            
-            // Simular clic en botón de inicio/reinicio
-            if (!isGameRunning) {
-              startGame();
-            }
-          } else if (aButton && !aButton.pressed) {
-            this.buttonADown = false;
-          }
-          
-          // Botón B para reiniciar cuando el juego ha terminado
-          const bButton = gamepad.buttons[1] || gamepad.buttons[2];
-          if (bButton && bButton.pressed && !this.buttonBDown) {
-            this.buttonBDown = true;
-            console.log('Botón B presionado en VR');
-            
-            // Reiniciar juego si está en game over
-            if (!isGameRunning) {
-              startGame();
-            }
-          } else if (bButton && !bButton.pressed) {
-            this.buttonBDown = false;
-          }
-        }
-      }
-    }
-  });
-  
-  // También manejar eventos de botones de controlador
-  AFRAME.registerComponent('controller-events', {
-    init: function() {
-      this.el.addEventListener('triggerdown', function(evt) {
-        console.log('Trigger presionado en VR');
-        startGame();
-      });
-      
-      this.el.addEventListener('abuttondown', function(evt) {
-        console.log('Botón A presionado en VR');
-        startGame();
-      });
-      
-      this.el.addEventListener('bbuttondown', function(evt) {
-        console.log('Botón B presionado en VR');
-        if (!isGameRunning) {
-          startGame();
-        }
-      });
-    }
-  });
-  
-  // Agregar controles VR a la escena
-  const scene = document.querySelector('a-scene');
-  if (scene) {
-    scene.setAttribute('vr-gamepad-controls', '');
-  }
 }
 
 /*********
@@ -513,26 +391,6 @@ function setupInstructions() {
   }
 }
 
-// NUEVO: Actualizar instrucciones para VR
-function updateInstructionsForVR() {
-  // Verificar si estamos en modo VR/AR
-  const scene = document.querySelector('a-scene');
-  if (scene && scene.is('vr-mode') || scene.is('ar-mode')) {
-    console.log('En modo VR/AR, actualizando instrucciones');
-    
-    // Actualizar texto para controles VR
-    const startCopyDesktop = document.getElementById('start-copy-desktop');
-    if (startCopyDesktop) {
-      startCopyDesktop.setAttribute('value', 'Joystick izquierdo: Mover\nBotón A: Empezar');
-    }
-    
-    const gameOverCopyDesktop = document.getElementById('game-over-copy-desktop');
-    if (gameOverCopyDesktop) {
-      gameOverCopyDesktop.setAttribute('value', 'Botón A: Jugar de nuevo');
-    }
-  }
-}
-
 setupControls();  // TODO: AFRAME.registerComponent has to occur before window.onload?
 
 window.onload = function() {
@@ -542,27 +400,6 @@ window.onload = function() {
   setupInstructions();
   setupCursor();
   setupMirrorVR();
-  
-  // NUEVO: Verificar y actualizar instrucciones para VR
-  setTimeout(updateInstructionsForVR, 2000);
-  
-  // NUEVO: Escuchar cambios de modo VR/AR
-  const scene = document.querySelector('a-scene');
-  if (scene) {
-    scene.addEventListener('enter-vr', function() {
-      console.log('Entrando a modo VR');
-      updateInstructionsForVR();
-    });
-    
-    scene.addEventListener('enter-ar', function() {
-      console.log('Entrando a modo AR');
-      updateInstructionsForVR();
-    });
-    
-    scene.addEventListener('exit-vr', function() {
-      console.log('Saliendo de modo VR');
-    });
-  }
 }
 
 /*************
