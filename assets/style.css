@@ -1,25 +1,53 @@
-/* Ocultar notificaciones y elementos de escritorio */
-.notification-container {
-  display: none !important;
+/* Estilos optimizados para VR */
+body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: 'Exo 2', sans-serif;
+    background-color: #a3d0ed;
 }
 
-/* Asegurar que el texto sea legible en VR */
+/* Ocultar todos los elementos de UI no-VR */
+.notification-container,
+.notification-desktop,
+.notification-button,
+.notification-close,
+#cursor-mobile,
+.clickable,
+#start-button,
+#restart-button {
+    display: none !important;
+    visibility: hidden !important;
+}
+
+/* Asegurar que la escena ocupe toda la pantalla */
+a-scene {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+/* Estilos para texto en VR */
 a-text {
-  font-size: 20px !important;
-  font-weight: bold !important;
+    font-family: 'Exo 2', sans-serif !important;
+    font-weight: 600 !important;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
 }
 
-/* Ocultar cursor para VR */
-#cursor-mobile {
-  display: none !important;
-}
-
-/* Estilos para el jugador en VR */
+/* Jugador más visible */
 #player {
-  cursor: none !important;
+    z-index: 1000;
 }
 
-/* Ajustar botones para VR */
-#start-button, #restart-button {
-  display: none !important; /* Ocultar botones físicos ya que usamos controles VR */
+/* Árboles con sombra */
+.tree {
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+}
+
+/* Icebergs */
+.iceberg {
+    animation-timing-function: ease-in-out;
 }
