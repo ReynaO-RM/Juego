@@ -1,254 +1,290 @@
+<!--
+
+Created by Alvin Wan (alvinwan.com)
+
+* ocean animation from Don Mccurdy
+
+-->
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Ergo VR | Meta Quest 3</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="description" content="Ergo VR Game for Meta Quest 3">
-    
-    <!-- A-Frame 1.4.0 estable -->
+    <title>Ergo | Endless Runner Game in Virtual Reality</title>
+    <!-- Usar A-Frame 1.4.0 para mejor soporte VR/AR -->
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-    
-    <!-- Nuestros scripts -->
     <script src="./assets/ocean.js"></script>
     <script src="./assets/runner.js"></script>
-    
-    <!-- Fuentes y estilos -->
-    <link href="https://fonts.googleapis.com/css?family=Exo+2:400,700" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/gh/alvinwan/aframe-low-poly@0.0.2/dist/aframe-low-poly.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.1.1/socket.io.js"></script>
+    <script src="http://mirrorvr.alvinwan.com/mirrorvr.js"></script>
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css" integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
+    <link href="https://fonts.googleapis.com/css?family=Exo+2" rel="stylesheet">
     <link href="./assets/style.css" rel="stylesheet" />
-    
     <style>
-      body {
-        margin: 0;
-        padding: 0;
-        overflow: hidden;
-        font-family: 'Exo 2', sans-serif;
+      /* Ocultar la notificación inicialmente */
+      .notification-container {
+        display: none;
       }
       
-      /* Ocultar todo excepto la escena VR */
-      .notification-container,
-      #cursor-mobile,
-      .clickable {
-        display: none !important;
-      }
-      
-      /* Texto más grande para VR */
+      /* Mejorar visibilidad del texto en VR */
       a-text {
         font-family: 'Exo 2', sans-serif !important;
       }
     </style>
   </head>
   <body>
-    <!-- Escena principal A-Frame -->
+    <!-- Contenedor de notificación (oculto por defecto) -->
+    <div class="notification-container" style="display: none;">
+      <div class="notification-desktop">
+        <p>This is the default room. If any mobile user joins, your will lose control and this app will mirror that mobile user's screen.
+          <a onClick="location.reload();" href="#" class="notification-button">Click to join a random room.</a>
+          <a onClick="hideWarning();" class="notification-close"><i class="fas fa-times"></i></a></p>
+      </div>
+    </div>
+    
+    <!-- Escena A-Frame con soporte VR/AR -->
     <a-scene 
+      fog="type: linear; color: #a3d0ed; near:5; far:20"
       vr-mode-ui="enabled: true"
+      ar-mode="enabled: true"
       renderer="antialias: true; colorManagement: true;"
-      background="color: #a3d0ed"
-      fog="type: linear; color: #a3d0ed; near: 5; far: 20">
-      
-      <!-- Assets -->
+      embedded>
+
+      <a-sky color="#a3d0ed"></a-sky>
+
+      <!-- Mixins -->
       <a-assets>
-        <!-- Mixins para árboles -->
         <a-mixin id="foliage" geometry="
             primitive: cone;
             segments-height: 1;
-            segments-radial: 4;
-            radius-bottom: 0.3;"
-           material="color: white; flatShading: true;"></a-mixin>
+            segments-radial:4;
+            radius-bottom:0.3;"
+           material="color:white;flat-shading: true;"></a-mixin>
         <a-mixin id="trunk" geometry="
             primitive: box;
-            height: 0.5;
-            width: 0.1;
-            depth: 0.1;"
-           material="color: #8B4513;"></a-mixin>
-           
-        <!-- Mixins para texto -->
+            height:0.5;
+            width:0.1;
+            depth:0.1;"
+           material="color:white;"></a-mixin>
         <a-mixin id="title" text="
-            font: exo2semibold;
-            height: 40;
-            width: 40;
-            opacity: 0.9;
-            align: center;"></a-mixin>
+            font:exo2bold;
+            height:40;
+            width:40;
+            opacity:0.75;
+            anchor:center;
+            align:center;"></a-mixin>
         <a-mixin id="copy" text="
-            font: exo2semibold;
-            height: 5;
-            width: 5;
-            opacity: 0.8;
-            align: center;"></a-mixin>
+            font:exo2bold;
+            height:5;
+            width:5;
+            opacity:0.75;
+            anchor:center;
+            align:center;"></a-mixin>
+        <a-mixin id="heading" text="
+            font:exo2bold;
+            height:10;
+            width:10;
+            opacity:0.75;
+            anchor:center;
+            align:center;"></a-mixin>
+        <a-mixin id="text" text="
+            font:exo2bold;
+            anchor:center;
+            align:center;"></a-mixin>
       </a-assets>
-      
-      <!-- Luces -->
-      <a-entity light="type: directional; castShadow: true; intensity: 0.6; color: #D0EAF9"
-                position="5 3 1"></a-entity>
-      <a-light type="ambient" intensity="0.4" color="#B4C5EC"></a-light>
-      
-      <!-- Cámara VR -->
-      <a-camera position="0 1.6 0">
-        <!-- Instrucciones VR (flotantes) -->
-        <a-entity position="0 0.2 -1" scale="0.5 0.5 0.5">
-          <a-text id="vr-instructions" 
-                  value="¡Bienvenido a ERGO VR!"
-                  align="center" 
-                  color="white" 
-                  width="4"
-                  opacity="0.8"></a-text>
-        </a-entity>
+
+      <!-- Lights! -->
+      <a-entity light="
+          type: directional;
+          castShadow: true;
+          intensity: 0.4;
+          color: #D0EAF9;"
+        position="5 3 1"></a-entity>
+      <a-light intensity="0.8" type="ambient" position="1 1 1" color="#B4C5EC"></a-light>
+
+      <!-- Camera! -->
+      <a-camera camera-listener onload-init-mirrorvr wasd-controls-enabled="false" lane-controls position="0 0 2.5">
+          <a-entity id="cursor-mobile" cursor="fuse: true; fuseTimeout: 250"
+                position="0 0 -1"
+                geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
+                material="color: white; shader: flat"
+                scale="0.5 0.5 0.5"
+                raycaster="far: 50; interval: 1000; objects: .clickable">
+          <a-animation begin="fusing" easing="ease-in" attribute="scale"
+             fill="backwards" from="1 1 1" to="0.2 0.2 0.2" dur="250"></a-animation>
       </a-camera>
-      
-      <!-- Océano -->
-      <a-ocean depth="100" width="100" amplitude="0.05" amplitude-variance="0.1" 
-               speed="2" speed-variance="1" opacity="0.9" density="40" color="#7AD2F7"></a-ocean>
-      
-      <!-- Icebergs -->
-      <a-entity class="iceberg" geometry="primitive: cone; height: 1; radiusBottom: 0.5; radiusTop: 0.15"
-                material="color: #E6F0FA; flatShading: true"
-                position="3 -0.1 -1.5">
-        <a-animation attribute="rotation" from="0 0 0" to="0 360 0" repeat="indefinite" dur="20000"></a-animation>
-        <a-animation attribute="position" from="3 -0.1 -1.5" to="5 -0.1 -4" repeat="indefinite" 
-                     direction="alternate" dur="15000"></a-animation>
-      </a-entity>
-      
-      <!-- Área de juego principal -->
-      <a-entity id="game-area" position="0 0 -10" rotation="0 0 0">
-        
-        <!-- Pista/cono principal -->
-        <a-cone id="track" radius-bottom="2" radius-top="1.8" height="10" 
-                position="0 -5 0" rotation="-90 0 0"
-                material="color: #005DED; emissive: #005DED; emissiveIntensity: 0.1">
-        </a-cone>
-        
-        <!-- Contenedor de árboles -->
-        <a-entity id="tree-container" position="0 0 0">
-          
-          <!-- Plantillas de árboles -->
-          <a-entity id="template-tree-left" class="tree-template" data-tree-position-index="0" 
-                    position="-0.5 0.55 -7" scale="0.3 0.3 0.3" visible="false">
+
+      <!-- Action! -->
+      <lp-cone class="iceberg" segments-radial="5" segments-height="3" height="1" amplitude-variance="0.25" radius-top="0.15" radius-bottom="0.5" position="3 -0.1 -1.5">
+        <a-animation attribute="rotation" from="-5 0 0" to="5 0 0" repeat="indefinite" direction="alternate"></a-animation>
+        <a-animation attribute="position" from="3 -0.2 -1.5" to="4 -0.2 -2.5" repeat="indefinite" direction="alternate" dur="12000" easing="linear"></a-animation>
+      </lp-cone>
+      <lp-cone class="iceberg" segments-radial="7" segments-height="3" height="0.5" amplitude="0.12" radius-top="0.25" radius-bottom="0.35" position="-3 -0.1 -0.5">
+        <a-animation attribute="rotation" from="0 0 -5" to="5 0 0" repeat="indefinite" direction="alternate" dur="1500"></a-animation>
+        <a-animation attribute="position" from="-4 -0.2 -0.5" to="-2 -0.2 -0.5" repeat="indefinite" direction="alternate" dur="15000" easing="linear"></a-animation>
+      </lp-cone>
+      <lp-cone class="iceberg" segments-radial="6" segments-height="2" height="0.5" amplitude="0.1" radius-top="0.25" radius-bottom="0.25" position="-5 -0.2 -3.5">
+        <a-animation attribute="rotation" from="5 0 -5" to="5 0 0" repeat="indefinite" direction="alternate" dur="800"></a-animation>
+        <a-animation attribute="position" from="-3 -0.2 -3.5" to="-5 -0.2 -5.5" repeat="indefinite" direction="alternate" dur="15000" easing="linear"></a-animation>
+      </lp-cone>
+
+      <a-ocean depth="50" width="50" amplitude="0" amplitude-variance="0.1" speed="1.5" speed-variance="1" opacity="1" density="50"></a-ocean>
+      <a-ocean depth="50" width="50" opacity="0.5" amplitude="0" amplitude-variance="0.15" speed="1.5" speed-variance="1" density="50"></a-ocean>
+
+      <lp-cone scale="2 2 2" shadow position="0 -3.5 -1.5" rotation="90 0 0" radius-top="1.9" radius-bottom="1.9" segments-radial="20" segments-height="20" amplitude="0.05" amplitude-variance="0.05" height="20" emissive="#005DED" emissive-intensity="0.1">
+        <a-entity id="tree-container" position="0 .5 -1.5" rotation="-90 0 0">
+
+          <!-- Tell user to turn around if facing the wrong way! -->
+          <a-text value="Turn around!" mixin="title" rotation="0 180 0" position="0 1.1 10"></a-text>
+          <a-text value="Turn left" mixin="title" rotation="0 -90 0" position="8 1.1 1.5"></a-text>
+          <a-text value="Turn right" mixin="title" rotation="0 90 0" position="-8 1.1 1.5"></a-text>
+          <a-text value="Look up" mixin="text" height="2" width="2" color="#333" rotation="-90 0 0" position="0 0.5 1.5"></a-text>
+
+          <a-entity data-tree-position-index="1" id="template-tree-center" class="tree tree-center" shadow scale="0.3 0.3 0.3" position="0 0.6 0">
             <a-entity mixin="foliage"></a-entity>
             <a-entity mixin="trunk" position="0 -0.5 0"></a-entity>
-            <a-animation attribute="position" 
-                         from="-0.5 0.55 -7"
-                         to="-0.5 0.55 2"
-                         dur="5000"
-                         repeat="0"></a-animation>
+            <a-animation attribute="position" ease="linear" from="0 0.6 -7" to="0 0.6 1.5" dur="5000"></a-animation>
           </a-entity>
-          
-          <a-entity id="template-tree-center" class="tree-template" data-tree-position-index="1" 
-                    position="0 0.6 -7" scale="0.3 0.3 0.3" visible="false">
+
+          <a-entity data-tree-position-index="0" id="template-tree-left" class="tree tree-left" shadow scale="0.3 0.3 0.3" position="-0.5 0.55 0">
             <a-entity mixin="foliage"></a-entity>
             <a-entity mixin="trunk" position="0 -0.5 0"></a-entity>
-            <a-animation attribute="position" 
-                         from="0 0.6 -7"
-                         to="0 0.6 2"
-                         dur="5000"
-                         repeat="0"></a-animation>
+            <a-animation attribute="position" ease="linear" from="-0.5 0.55 -7" to="-0.5 0.55 1.5" dur="5000"></a-animation>
           </a-entity>
-          
-          <a-entity id="template-tree-right" class="tree-template" data-tree-position-index="2" 
-                    position="0.5 0.55 -7" scale="0.3 0.3 0.3" visible="false">
+
+          <a-entity data-tree-position-index="2" id="template-tree-right" class="tree" shadow scale="0.3 0.3 0.3" position="0.5 0.55 0">
             <a-entity mixin="foliage"></a-entity>
             <a-entity mixin="trunk" position="0 -0.5 0"></a-entity>
-            <a-animation attribute="position" 
-                         from="0.5 0.55 -7"
-                         to="0.5 0.55 2"
-                         dur="5000"
-                         repeat="0"></a-animation>
+            <a-animation attribute="position" ease="linear" from="0.5 0.55 -7" to="0.5 0.55 1.5" dur="5000"></a-animation>
           </a-entity>
-          
+
+          <a-text id="score" value="" mixin="text" height="40" width="40" position="0 1.2 -3" opacity="0.75"></a-text>
+
+          <a-entity id="menu-container">
+            <a-entity id="start-menu" position="0 1.1 -3">
+              <a-text id="start-copy-desktop" value="Hit any key to start. Move left and right to avoid the trees!" mixin="copy" position="0 1 0"></a-text>
+              <a-entity id="start-copy-mobile" position="0 1 0">
+                <a-text value="Turn left and right to move your player, and avoid the trees!" mixin="copy"></a-text>
+                <a-text value="Start" position="0 0.75 0" mixin="heading"></a-text>
+                <a-box id="start-button" position="0 0.65 -0.05" width="1.5" height="0.6" depth="0.1"></a-box>
+              </a-entity>
+              <a-text value="ERGO" mixin="title"></a-text>
+            </a-entity>
+            <a-entity id="game-over" position="0 1.1 -3">
+              <a-text value="?" mixin="heading" id="game-score" position="0 1.7 0"></a-text>
+              <a-text value="Score" mixin="copy" position="0 1.2 0"></a-text>
+              <a-text id="game-over-copy-desktop" value="Hit any key to play again." mixin="copy" position="0 0.8 0"></a-text>
+              <a-entity id="game-over-copy-mobile">
+                <a-text value="Restart" mixin="heading" position="0 0.7 0"></a-text>
+                <a-box id="restart-button" position="0 0.6 -0.05" width="2" height="0.6" depth="0.1"></a-box>
+              </a-entity>
+              <a-text value="Game Over" mixin="title"></a-text>
+            </a-entity>
+          </a-entity>
+
+          <a-entity id="player" player>
+            <a-sphere radius="0.05">
+              <a-animation repeat="indefinite" direction="alternate" attribute="position" ease="ease-in-out" from="0 0.5 0.6" to="0 0.525 0.6"></a-animation>
+              <a-animation repeat="indefinite" direction="alternate" attribute="radius" from="0.05" to="0.055" dur="1500"></a-animation>
+              <a-light type="point" intensity="0.35" color="#FF440C">
+                <a-animation repeat="indefinite" direction="alternate-reverse" attribute="intensity" ease="ease-in-out" from="0.35" to="0.5"></a-animation>
+              </a-light>
+            </a-sphere>
+          </a-entity>
         </a-entity>
-        
-        <!-- Jugador -->
-        <a-entity id="player" position="0 0.6 1.5">
-          <a-sphere radius="0.08" color="#FF440C">
-            <a-animation attribute="scale" from="1 1 1" to="1.1 1.1 1.1" 
-                         repeat="indefinite" direction="alternate" dur="1000"></a-animation>
-            <a-light type="point" color="#FF440C" intensity="0.5" distance="2"></a-light>
-          </a-sphere>
-        </a-entity>
-        
-        <!-- Puntuación -->
-        <a-entity position="0 2 0">
-          <a-text id="score" value="Puntuación: 0" 
-                  align="center" color="white" width="3" scale="2 2 2"></a-text>
-        </a-entity>
-        
+      </lp-cone>
+      
+      <!-- Controles VR opcionales (se activan automáticamente) -->
+      <a-entity id="vr-controls-entity" visible="false">
+        <!-- Estos controles se manejan por JavaScript -->
       </a-entity>
-      
-      <!-- Menús -->
-      <a-entity id="menu-container" position="0 1.6 -2">
-        
-        <!-- Menú de inicio -->
-        <a-entity id="start-menu" visible="true">
-          <a-text value="ERGO VR" 
-                  position="0 0.5 0"
-                  align="center"
-                  color="white"
-                  width="4"
-                  scale="2 2 2"></a-text>
-          
-          <a-text id="start-copy-desktop"
-                  value="Joystick izquierdo: Mover\nBotón A: Empezar"
-                  position="0 -0.2 0"
-                  align="center"
-                  color="#CCCCCC"
-                  width="3"
-                  scale="1 1 1"></a-text>
-        </a-entity>
-        
-        <!-- Menú de fin del juego -->
-        <a-entity id="game-over" visible="false">
-          <a-text value="FIN DEL JUEGO"
-                  position="0 0.5 0"
-                  align="center"
-                  color="white"
-                  width="4"
-                  scale="2 2 2"></a-text>
-          
-          <a-text value="Puntuación:"
-                  position="0 0 0"
-                  align="center"
-                  color="#CCCCCC"
-                  width="2"
-                  scale="1 1 1"></a-text>
-          
-          <a-text id="game-score" value="0"
-                  position="0 -0.3 0"
-                  align="center"
-                  color="#FF440C"
-                  width="2"
-                  scale="1.5 1.5 1.5"></a-text>
-          
-          <a-text id="game-over-copy-desktop"
-                  value="Botón A: Jugar de nuevo"
-                  position="0 -0.8 0"
-                  align="center"
-                  color="#CCCCCC"
-                  width="3"
-                  scale="1 1 1"></a-text>
-        </a-entity>
-        
-      </a-entity>
-      
-      <!-- Suelo de referencia -->
-      <a-circle position="0 0 0" radius="20" rotation="-90 0 0" 
-                material="color: #1a2b3c; opacity: 0.3; transparent: true"></a-circle>
-      
-      <!-- Cielo -->
-      <a-sky color="#a3d0ed"></a-sky>
       
     </a-scene>
     
     <script>
-      // Script de inicialización
+      // Script para manejar la transición a VR/AR
       document.addEventListener('DOMContentLoaded', function() {
-        console.log('DOM loaded, VR game ready');
+        console.log('Página cargada, configurando para Meta Quest 3');
         
-        // Detectar si estamos en un headset VR
+        // Ocultar notificación inmediatamente
+        var notification = document.querySelector('.notification-container');
+        if (notification) {
+          notification.style.display = 'none';
+        }
+        
+        // Verificar soporte WebXR
         if (navigator.xr) {
-          console.log('WebXR available');
+          console.log('WebXR soportado');
           navigator.xr.isSessionSupported('immersive-vr').then(function(supported) {
-            console.log('VR supported:', supported);
+            console.log('VR inmersivo soportado:', supported);
+          });
+          
+          navigator.xr.isSessionSupported('immersive-ar').then(function(supported) {
+            console.log('AR inmersivo soportado:', supported);
+          });
+        }
+        
+        // Escuchar cuando se entra en modo VR/AR
+        var scene = document.querySelector('a-scene');
+        if (scene) {
+          scene.addEventListener('enter-vr', function() {
+            console.log('¡Modo VR activado!');
+            // Actualizar instrucciones para VR
+            updateVRInstructions();
+          });
+          
+          scene.addEventListener('enter-ar', function() {
+            console.log('¡Modo AR activado!');
+            // Actualizar instrucciones para AR
+            updateVRInstructions();
           });
         }
       });
+      
+      // Función para actualizar instrucciones en VR/AR
+      function updateVRInstructions() {
+        console.log('Actualizando instrucciones para VR/AR');
+        
+        // Actualizar texto del menú de inicio
+        var startCopyDesktop = document.getElementById('start-copy-desktop');
+        if (startCopyDesktop) {
+          startCopyDesktop.setAttribute('value', 'Joystick izquierdo: Mover\nBotón A: Empezar juego');
+        }
+        
+        // Actualizar texto del menú de fin de juego
+        var gameOverCopyDesktop = document.getElementById('game-over-copy-desktop');
+        if (gameOverCopyDesktop) {
+          gameOverCopyDesktop.setAttribute('value', 'Botón A: Jugar de nuevo');
+        }
+        
+        // Actualizar otras instrucciones
+        var turnAroundText = document.querySelector('a-text[value="Turn around!"]');
+        if (turnAroundText) {
+          turnAroundText.setAttribute('value', '¡Gira para ver!');
+        }
+        
+        var turnLeftText = document.querySelector('a-text[value="Turn left"]');
+        if (turnLeftText) {
+          turnLeftText.setAttribute('value', 'Gira izquierda');
+        }
+        
+        var turnRightText = document.querySelector('a-text[value="Turn right"]');
+        if (turnRightText) {
+          turnRightText.setAttribute('value', 'Gira derecha');
+        }
+        
+        var lookUpText = document.querySelector('a-text[value="Look up"]');
+        if (lookUpText) {
+          lookUpText.setAttribute('value', 'Mira arriba');
+        }
+      }
+      
+      // Función para ocultar advertencia (ya no es necesaria pero se mantiene por compatibilidad)
+      function hideWarning() {
+        var warning = document.querySelector('.notification-container');
+        if (warning) {
+          warning.style.display = 'none';
+        }
+      }
     </script>
   </body>
 </html>
